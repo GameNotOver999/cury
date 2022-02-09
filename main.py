@@ -1,19 +1,21 @@
-from lib2to3.pytree import convert
+#from lib2to3.pytree import convert
 from tkinter import *
 
 from tkinter.colorchooser import askcolor
 from PIL import Image
-from PIL import EpsImagePlugin
+from PIL import ImageGrab
+#from PIL import EpsImagePlugin
 
 
 import math
-EpsImagePlugin.gs_windows_binary =  r"C:\Program Files\gs\gs9.53.3\bin\gswin64c"
+#EpsImagePlugin.gs_windows_binary =  r"C:\Program Files\gs\gs9.53.3\bin\gswin64c"
 
 class begin():
     window = Tk()
     window.config(bg="gray")
     width = 0
     height = 0
+
 
     def __init__(self):
 
@@ -41,21 +43,22 @@ class begin():
 
     def newfile(self):
 
+
         self.width = self.widthe.get()
         self.height = self.heighte.get()
 
         newf = main(self.height, self.width)
 
 
-
-
-
 class main():
-
 
     def __init__(self, height, width):
 
-        self.choises = ["pen", "square", "oval", "line", "polygon", "gum"]
+        self.w = width
+        self.h = height
+
+
+        self.choises = ["pen", "square", "oval", "line", "polygon", "gum", "caligraphy pen"]
         self.color = "black"
 
         self.namec = StringVar(begin.window)
@@ -92,10 +95,25 @@ class main():
         self.c = Canvas(begin.window, width=width, height=height, bg="white")
         self.c.grid(row=1, columnspan=14)
 
-        #self.c.pack()
+
+
+        self.newframe = Button(begin.window, text="newframe", command=self.newframec)
+        self.newframe.grid(row=2, columnspan=14)
         self.setup()
+
         self.c.mainloop()
+
+        #self.c.pack()
+
+
         self.penss()
+
+
+
+
+
+    def newframec(self):
+        print("newframe")
 
     def saveimage(self):
 
@@ -103,11 +121,22 @@ class main():
         self.filename = self.filenaml.get()
 
         self.c.postscript(file=self.filename + ".eps", colormode='color')
-        self.image_eps = self.filename + ".eps"
-        self.im = Image.open(self.image_eps)
-        self.fig = self.im.convert('RGBA')
-        self.image_png = self.filename + ".png"
-        self.fig.save(self.image_png)
+        #self.image_eps = self.filename + ".eps"
+        #self.im = Image.open(self.image_eps)
+        #self.fig = self.im.convert('RGBA')
+        #self.image_png = self.filename + ".png"
+        #self.fig.save(self.image_png)
+        self.box = self.getc()
+        canvas = self.box  # Get Window Coordinates of Canvas
+        self.grabcanvas = ImageGrab.grab(bbox=canvas).save(self.filename + ".jpg")
+
+    def getc(self):
+        x = self.c.winfo_rootx() + self.c.winfo_x()
+        y = self.c.winfo_rooty() + self.c.winfo_y()
+        x1 = x + self.c.winfo_width()
+        y1 = y + self.c.winfo_height()
+
+        return x, y, x1, y1
 
     def choosecolor(self):
 
@@ -144,16 +173,38 @@ class main():
             self.prepol = self.c.create_polygon(self.oldx, self.oldy,
                                                      event.x, event.y, self.oldx, event.y, fill=self.color, outline=self.color)
 
+        elif self.caligraphpen == True:
+            self.dis = math.sqrt((self.oldx - event.x)**2 + (self.oldy - event.y)**2)
+            self.newt = abs(self.thick + self.dis)
 
+            self.newt = (self.newt / (100.05 - self.pensize.get())) * 30
 
+            if self.newt <= 0:
+                self.newt = self.thick / 5
 
+            if self.newt > 25 * self.pensize.get():
+                self.newt = 25 * self.pensize.get()
 
+            self.newt = (self.newt * 3 + self.oldthicc * 7) / 10
+
+            self.c.create_line(self.oldx, self.oldy, event.x, event.y, fill=self.color, width=self.newt,
+                               capstyle=ROUND)
+            self.oldx = event.x
+            self.oldy = event.y
+            self.oldthicc = self.newt
 
 
     def reset(self, event):
 
         self.oldx = event.x
         self.oldy = event.y
+        self.oldthicc = self.pensize.get()
+
+        if self.pen == True:
+            self.c.create_oval(event.x - self.pensize.get() / 2, event.y - self.pensize.get() / 2,
+                               event.x + self.pensize.get() / 2, event.y + self.pensize.get() / 2, fill=self.color, outline=self.color)
+
+
 
     def rforf(self, event):
 
@@ -170,6 +221,8 @@ class main():
         elif self.polygon == True:
             self.c.create_polygon(self.oldx, self.oldy,
                                   event.x, event.y, self.oldx, event.y, fill=self.color, outline=self.color)
+        elif self.caligraphpen == True:
+            self.oldthicc = self.thick
 
 
 
@@ -191,6 +244,12 @@ class main():
         self.pen = True
         self.line = False
         self.polygon = False
+        self.caligraphpen = False
+        self.oldthicc = 0
+        self.oldcolor = "black"
+        self.ch = False
+        self.cd = True
+
 
         self.presquer = self.c.create_rectangle(0, 0, 0, 0)
         self.prescircle = self.c.create_oval(0, 0, 0, 0)
@@ -213,6 +272,7 @@ class main():
             self.pen = False
             self.line = False
             self.polygon = False
+            self.caligraphpen = False
 
         elif self.namec.get() == "oval":
             self.oval = True
@@ -220,6 +280,7 @@ class main():
             self.squere = False
             self.line = False
             self.polygon = False
+            self.caligraphpen = False
 
         elif self.namec.get() == "line":
             self.oval = False
@@ -227,6 +288,7 @@ class main():
             self.squere = False
             self.line = True
             self.polygon = False
+            self.caligraphpen = False
 
         elif self.namec.get() == "polygon":
             self.oval = False
@@ -234,6 +296,15 @@ class main():
             self.squere = False
             self.line = False
             self.polygon = True
+            self.caligraphpen = False
+
+        elif self.namec.get() == "caligraphy pen":
+            self.oval = False
+            self.pen = False
+            self.squere = False
+            self.line = False
+            self.polygon = False
+            self.caligraphpen = True
 
         elif self.namec.get() == "gum":
             self.oval = False
@@ -241,10 +312,23 @@ class main():
             self.squere = False
             self.line = False
             self.polygon = False
+            self.caligraphpen = False
+            if self.ch:
+                print(self.color)
+                self.oldcolor = self.color
             self.color = "white"
+            self.ch = False
+            self.cd = True
+
+        if self.namec.get() != "gum":
+            if self.cd:
+                self.color = self.oldcolor
+            self.oldcolor = self.color
+            self.ch = True
+            self.cd = False
 
 
 
-
+#starts the code
 if __name__ == '__main__':
     begin()
